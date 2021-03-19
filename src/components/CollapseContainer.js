@@ -4,17 +4,43 @@ import Collapsible from "react-collapsible";
 const electron = window.require("electron");
 const { nativeImage } = electron;
 
-function CollapseContainer({ property, attributesArr, handleSetRarity, i }) {
+function CollapseContainer({
+  property,
+  attributesArr,
+  handleSetRarity,
+  i,
+  setLayerNumber,
+}) {
   const [isOpen, setIsOpen] = useState(false);
+
+  const TriggerElement = () => {
+    return (
+      <div className="flex items-center justify-between w-full">
+        <p
+          className="w-full text-2xl font-bold"
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          {property.fileName}
+        </p>
+        <input
+          type="number"
+          placeholder="Layer number"
+          value={property.layerNumber}
+          onChange={(e) => setLayerNumber(e, property)}
+        />
+      </div>
+    );
+  };
 
   return (
     <Collapsible
-      className="w-full px-2 py-3 font-semibold bg-gray-200 border-2 border-black"
-      openedClassName="w-full px-2 py-3 border-2 border-black font-semibold bg-gray-200"
-      key={property}
-      trigger={property}
-      onOpening={() => setIsOpen(true)}
-      onCloseing={() => setIsOpen(false)}
+      open={isOpen}
+      triggerSibling={TriggerElement}
+      className="w-full px-1 font-semibold bg-gray-200 border-2 border-black"
+      openedClassName="w-full px-1 border-2 border-black font-semibold bg-gray-200"
+      easing="cubic-bezier(0.4, 0, 0.2, 1)"
+      transitionTime="250"
+      key={property.fileName}
     >
       <div className="flex items-center justify-start w-full mr-3 overflow-y-auto">
         {attributesArr.length > 0
@@ -23,7 +49,7 @@ function CollapseContainer({ property, attributesArr, handleSetRarity, i }) {
                 <div
                   style={{ width: "150px", minWidth: "150px" }}
                   className="flex flex-col items-start justify-start"
-                  key={`${property}-${attribute.fileName}`}
+                  key={`${property.fileName}-${attribute.fileName}`}
                 >
                   {isOpen ? (
                     <img

@@ -35,7 +35,7 @@ function App() {
       maxUniques =
         maxUniques * fs.readdirSync(path.join(parentDir, file)).length;
 
-      properties.push(file);
+      properties.push({ fileName: file, layerNumber: i });
       attributes[i] = [];
       fs.readdirSync(path.join(parentDir, file)).forEach((subFile, j) => {
         if (subFile === ".DS_Store") return;
@@ -143,7 +143,8 @@ function App() {
         // });
 
         nft.push({
-          propertyName: property,
+          propertyName: property.fileName,
+          layerNumber: property.layerNumber,
           value: chosenRandom.split("\\").pop().split("/").pop().split(".")[0],
           filePath: chosenRandom,
         });
@@ -162,6 +163,17 @@ function App() {
     setGeneratedItems(allGenerated);
     generateImage(allGenerated[0]);
   }, [isGenerating]);
+
+  async function setLayerNumber(e, property) {
+    setPropertiesArr(
+      propertiesArr.map((x, _i) => {
+        if (x.fileName === property.fileName) {
+          x.layerNumber = parseInt(e.target.value);
+        }
+        return x;
+      })
+    );
+  }
 
   return (
     <div className="flex flex-col items-center justify-center w-11/12 h-full">
@@ -195,11 +207,14 @@ function App() {
               {propertiesArr.map((property, i) => {
                 return (
                   <CollapseContainer
-                    key={property}
+                    key={property.fileName}
                     property={property}
                     attributesArr={attributesArr}
                     handleSetRarity={(e, i, j) => handleSetRarity(e, i, j)}
                     i={i}
+                    setLayerNumber={(e, property) =>
+                      setLayerNumber(e, property)
+                    }
                   />
                 );
               })}
