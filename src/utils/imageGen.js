@@ -10,7 +10,7 @@ function checkContainsGifs(arr) {
   return indicesArr;
 }
 
-export async function generateImage(generatedItem) {
+export async function generateImage(generatedItem, i) {
   console.log(generatedItem);
   // let gifIndices = checkContainsGifs(generatedItem);
   // if(gifIndices.length > 0 ) {
@@ -30,7 +30,7 @@ export async function generateImage(generatedItem) {
         return { input: item.filePath, pages: -1 };
       })
     )
-    .toFile("output.gif");
+    .toFile(`/output/images/${i}.png`);
 }
 
 // function verifyGifs (generatedItem, gifIndices) {
