@@ -29,27 +29,51 @@ function App() {
 
     let properties = [];
     let attributes = [];
+    let hasDSStore = false;
     fs.readdirSync(parentDir).forEach(async (file, i) => {
-      if (file === ".DS_Store") return;
+      if (file === ".DS_Store") {
+        hasDSStore = true;
+        return;
+      }
 
       maxUniques =
-        maxUniques * fs.readdirSync(path.join(parentDir, file)).length;
+        maxUniques *
+        (fs.readdirSync(path.join(parentDir, file)).length -
+          (hasDSStore ? 1 : 0));
 
       properties.push({ fileName: file, layerNumber: i });
+
       attributes[i] = [];
+      let hasSubDSStore = false;
       fs.readdirSync(path.join(parentDir, file)).forEach((subFile, j) => {
-        if (subFile === ".DS_Store") return;
+        if (subFile === ".DS_Store") {
+          hasDSStore = true;
+          return;
+        }
 
         attributes[i].push({
           fileName: subFile,
           filePath: path.join(parentDir, file, subFile),
           weight: (
-            (1 / fs.readdirSync(path.join(parentDir, file)).length) *
+            (1 /
+              (fs.readdirSync(path.join(parentDir, file)).length -
+                (hasSubDSStore ? 1 : 0))) *
             100
           ).toFixed(3),
         });
       });
     });
+
+    properties = properties.filter(function (el) {
+      return el != null;
+    });
+
+    attributes = attributes.filter(function (el) {
+      return el != null;
+    });
+
+    console.log(properties);
+    console.log(attributes);
 
     setPropertiesArr((propertiesArr) => [...propertiesArr, ...properties]);
     setAttributesArr((attributesArr) => [...attributesArr, ...attributes]);
@@ -114,6 +138,7 @@ function App() {
     });
 
     console.log(alreadyExists);
+    console.log(arr);
     return alreadyExists;
   }
 
