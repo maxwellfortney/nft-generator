@@ -14,6 +14,11 @@ import { generateImage } from "../utils/imageGen";
 
 function App() {
   const [inputDir, setInputDir] = useState("");
+  const [outputDir, setOutputDir] = useState("");
+  const [metadataBaseURL, setMetadataBaseUrl] = useState("");
+
+  const [shouldGoNextPage, setShouldGoNextPage] = useState(false);
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLoadingLocalImages, setIsLoadingLocalImages] = useState(false);
 
@@ -86,7 +91,6 @@ function App() {
   }
 
   async function selectInputFolder() {
-    setIsLoadingLocalImages(true);
     const dir = await dialog
       .showOpenDialog({
         properties: ["openDirectory"],
@@ -102,9 +106,47 @@ function App() {
       console.log(dir);
       setInputDir(dir);
 
-      await parseFolders(dir);
+      if (outputDir.length > 0) {
+        await parseFolders(dir);
+      } else {
+        console.log("Waiting for output dir");
+      }
     } else {
-      setIsLoadingLocalImages(false);
+      console.log("No folder selected");
+    }
+  }
+
+  async function createFolders(dir) {
+    if (!fs.existsSync(path.join(dir, "images"))) {
+      fs.mkdirSync(path.join(dir, "images"));
+    }
+    if (!fs.existsSync(path.join(dir, "json"))) {
+      fs.mkdirSync(path.join(dir, "json"));
+    }
+  }
+
+  async function selectOutputFolder() {
+    const dir = await dialog
+      .showOpenDialog({
+        properties: ["openDirectory"],
+      })
+      .then((res) => {
+        if (res.filePaths.length === 1) {
+          return res.filePaths[0];
+        }
+        return null;
+      });
+
+    if (dir !== null) {
+      setOutputDir(dir);
+      await createFolders(dir);
+
+      if (inputDir.length > 0) {
+        await parseFolders(inputDir);
+      } else {
+        console.log("Waiting for input dir");
+      }
+    } else {
       console.log("No folder selected");
     }
   }
@@ -184,10 +226,79 @@ function App() {
     }
 
     console.log(allGenerated);
-    setIsGenerating(false);
+
     setGeneratedItems(allGenerated);
-    generateImage(allGenerated[0]);
+    allGenerated.forEach(async (item, i) => {
+      await generateImage(item, i, outputDir);
+      await saveJSONMetadata(item, i);
+    });
+
+    generatePercentages(allGenerated);
+
+    setIsGenerating(false);
   }, [isGenerating]);
+
+  async function generatePercentages(allGenerated) {
+    let totalCounts = [];
+    let jsonObj = [];
+
+    allGenerated[0].forEach((attribute, i) => {
+      totalCounts[attribute.propertyName] = [];
+    });
+
+    allGenerated.forEach((item, i) => {
+      item.forEach((attribute, j) => {
+        totalCounts[attribute.propertyName].push(attribute.value);
+      });
+    });
+
+    allGenerated[0].forEach((attribute, i) => {
+      const totalItems = totalCounts[attribute.propertyName].length;
+      const uniqueItems = [...new Set(totalCounts[attribute.propertyName])];
+
+      uniqueItems.forEach((currAttribute) => {
+        const numItems = totalCounts[attribute.propertyName].filter(
+          (color) => color === currAttribute
+        );
+        jsonObj.push({
+          attributeName: currAttribute,
+          percent: (numItems.length * 100) / totalItems,
+        });
+      });
+    });
+
+    console.log(jsonObj);
+
+    fs.writeFileSync(
+      path.join(outputDir, "json", "attribute-percentages.json"),
+      JSON.stringify(jsonObj)
+    );
+  }
+
+  async function saveJSONMetadata(item, i) {
+    let jsonObj = {
+      attributes: [],
+    };
+    let isGIF = false;
+    item.forEach((attribute, j) => {
+      jsonObj.attributes.push({
+        trait_type: attribute.propertyName,
+        value: attribute.value,
+      });
+
+      if (attribute.filePath.includes(".gif")) {
+        isGIF = true;
+      }
+    });
+
+    jsonObj.image = `${metadataBaseURL}${
+      metadataBaseURL.slice(-1) === "/" ? "" : "/"
+    }images/${i}${isGIF ? ".gif" : ".png"}`;
+
+    let jsonItemString = JSON.stringify(jsonObj);
+
+    fs.writeFileSync(path.join(outputDir, "json", `${i}.json`), jsonItemString);
+  }
 
   async function setLayerNumber(e, property) {
     setPropertiesArr(
@@ -202,7 +313,10 @@ function App() {
 
   return (
     <div className="flex flex-col items-center justify-center w-11/12 h-full">
-      {inputDir.length > 0 ? (
+      {outputDir.length > 0 &&
+      inputDir.length > 0 &&
+      metadataBaseURL.length > 0 &&
+      shouldGoNextPage ? (
         <div
           style={{
             height: "95%",
@@ -249,8 +363,9 @@ function App() {
               >
                 {isGenerating ? <div className="loader" /> : "Calculate"}
               </button>
-              {generatedItems.length > 0 ? (
+              {generatedItems.length > 0 && !isGenerating ? (
                 <>
+                  <p>DONT CLOSE UNTIL YOU VERIFY OUTPUT FOLDER IS DONE</p>
                   <div className="flex items-center justify-start w-full overflow-y-auto">
                     {generatedItems.map((item, i) => {
                       return (
@@ -289,12 +404,41 @@ function App() {
           {isLoadingLocalImages ? (
             <div className="loader"></div>
           ) : (
-            <button
-              className="p-4 font-semibold border-2 border-black rounded-md"
-              onClick={selectInputFolder}
-            >
-              Choose the input folder
-            </button>
+            <div className="flex flex-col">
+              <button
+                className="p-4 mb-3 font-semibold border-2 border-black rounded-md"
+                onClick={selectInputFolder}
+              >
+                {inputDir.length > 0 ? inputDir : "Choose the INPUT folder"}
+              </button>
+              <button
+                className="p-4 mb-3 font-semibold border-2 border-black rounded-md"
+                onClick={selectOutputFolder}
+              >
+                {outputDir.length > 0 ? outputDir : "Choose the OUTPUT folder"}
+              </button>
+              <input
+                type="text"
+                className="p-2 mb-3 border-2 border-black rounded-md"
+                onChange={(e) => setMetadataBaseUrl(e.target.value)}
+                value={metadataBaseURL}
+                placeholder="Input metadata base URL."
+              />
+              {outputDir.length > 0 &&
+              inputDir.length > 0 &&
+              metadataBaseURL.length > 0 ? (
+                <button
+                  className="p-4 mt-3 font-semibold bg-indigo-500 border-2 border-black rounded-md"
+                  onClick={() => setShouldGoNextPage(true)}
+                >
+                  Next
+                </button>
+              ) : (
+                <p className="mt-3 font-semibold text-center text-red-500">
+                  Please input required fields above
+                </p>
+              )}
+            </div>
           )}
         </>
       )}

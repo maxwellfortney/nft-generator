@@ -1,4 +1,5 @@
 const sharp = require("sharp");
+const path = require("path");
 
 function checkContainsGifs(arr) {
   let indicesArr = [];
@@ -10,8 +11,8 @@ function checkContainsGifs(arr) {
   return indicesArr;
 }
 
-export async function generateImage(generatedItem, i) {
-  console.log(generatedItem);
+export async function generateImage(generatedItem, i, outputDir) {
+  // console.log(generatedItem);
   // let gifIndices = checkContainsGifs(generatedItem);
   // if(gifIndices.length > 0 ) {
   //   verifyGifs(generatedItem, gifIndices);
@@ -22,7 +23,7 @@ export async function generateImage(generatedItem, i) {
     return a.layerNumber - b.layerNumber;
   });
 
-  console.log(generatedItem);
+  // console.log(generatedItem);
 
   sharp(generatedItem[0].filePath, { pages: -1 })
     .composite(
@@ -30,7 +31,7 @@ export async function generateImage(generatedItem, i) {
         return { input: item.filePath, pages: -1 };
       })
     )
-    .toFile(`/output/images/${i}.png`);
+    .toFile(path.join(outputDir, "images", `${i}.png`));
 }
 
 // function verifyGifs (generatedItem, gifIndices) {
