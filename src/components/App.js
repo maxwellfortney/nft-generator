@@ -217,6 +217,26 @@ function App() {
         });
       });
 
+      if (hasAstronautHelmet(nft)) {
+        let newNft = [];
+        nft.forEach((property) => {
+          if ([1, 2, 3, 4, 7].includes(property.layerNumber)) {
+            newNft.push(property);
+          }
+        });
+
+        nft = newNft;
+      } else if (hasCyborg(nft) || hasVisor(nft)) {
+        let newNft = [];
+        nft.forEach((property) => {
+          if ([1, 2, 3, 4, 5, 7, 8].includes(property.layerNumber)) {
+            newNft.push(property);
+          }
+        });
+
+        nft = newNft;
+      }
+
       if (alreadyExists(allGenerated, nft) === false) {
         console.log(nft);
         allGenerated.push(nft);
@@ -237,6 +257,39 @@ function App() {
 
     setIsGenerating(false);
   }, [isGenerating]);
+
+  function hasAstronautHelmet(nft) {
+    let hasAstronautHelmet = false;
+    nft.forEach((property) => {
+      if (property.value === "Astronaut Helmet") {
+        hasAstronautHelmet = true;
+      }
+    });
+
+    return hasAstronautHelmet;
+  }
+
+  function hasCyborg(nft) {
+    let hasCyborg = false;
+    nft.forEach((property) => {
+      if (property.value === "Cyborg") {
+        hasCyborg = true;
+      }
+    });
+
+    return hasCyborg;
+  }
+
+  function hasVisor(nft) {
+    let hasVisor = false;
+    nft.forEach((property) => {
+      if (property.value === "Visor") {
+        hasVisor = true;
+      }
+    });
+
+    return hasVisor;
+  }
 
   async function generatePercentages(allGenerated) {
     let totalCounts = [];

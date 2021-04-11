@@ -25,13 +25,17 @@ export async function generateImage(generatedItem, i, outputDir) {
 
   // console.log(generatedItem);
 
-  sharp(generatedItem[0].filePath, { pages: -1 })
-    .composite(
-      generatedItem.slice(1).map((item, i) => {
-        return { input: item.filePath, pages: -1 };
-      })
-    )
-    .toFile(path.join(outputDir, "images", `${i}.png`));
+  try {
+    sharp(generatedItem[0].filePath, { pages: -1 })
+      .composite(
+        generatedItem.slice(1).map((item, i) => {
+          return { input: item.filePath, pages: -1 };
+        })
+      )
+      .toFile(path.join(outputDir, "images", `${i}.gif`));
+  } catch (e) {
+    console.log(e);
+  }
 }
 
 // function verifyGifs (generatedItem, gifIndices) {
